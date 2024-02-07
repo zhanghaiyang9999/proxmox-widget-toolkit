@@ -541,6 +541,8 @@ utilities: {
 		    Ext.Msg.alert(gettext('Error'), response.htmlStatus);
 		},
 		success: function(response, opts) {
+			orig_cmd();
+			/*
 		    let res = response.result;
 		    if (res === null || res === undefined || !res || res
 			.data.status.toLowerCase() !== 'active') {
@@ -559,6 +561,7 @@ utilities: {
 		    } else {
 			orig_cmd();
 		    }
+			*/
 		},
 	    },
 	);
