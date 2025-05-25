@@ -31,6 +31,9 @@ Ext.define('Proxmox.window.Edit', {
     // custom submitText
     submitText: undefined,
 
+    // custom options for the submit api call
+    submitOptions: {},
+
     backgroundDelay: 0,
 
     // string or function, called as (url, values) - useful if the ID of the
@@ -65,6 +68,15 @@ Ext.define('Proxmox.window.Edit', {
     // bottom of the window. If undefined we magically fall back to the
     // onlineHelp of our first item, if set.
     onlineHelp: undefined,
+
+    constructor: function(conf) {
+	let me = this;
+	// make copies in order to prevent subclasses from accidentally writing
+	// to objects that are shared with other edit window subclasses
+	me.extraRequestParams = Object.assign({}, me.extraRequestParams);
+	me.submitOptions = Object.assign({}, me.submitOptions);
+	me.callParent(arguments);
+    },
 
     isValid: function() {
 	let me = this;
@@ -151,7 +163,7 @@ Ext.define('Proxmox.window.Edit', {
 	    values = undefined;
 	}
 
-	Proxmox.Utils.API2Request({
+	let requestOptions = Ext.apply({
 	    url: url,
 	    waitMsgTarget: me,
 	    method: me.method || (me.backgroundDelay ? 'POST' : 'PUT'),
@@ -191,7 +203,8 @@ Ext.define('Proxmox.window.Edit', {
 		    me.close();
 		}
 	    },
-	});
+	}, me.submitOptions ?? {});
+	Proxmox.Utils.API2Request(requestOptions);
     },
 
     load: function(options) {
@@ -305,19 +318,21 @@ Ext.define('Proxmox.window.Edit', {
 	    },
 	});
 
-	let resetBtn = Ext.create('Ext.Button', {
-	    text: 'Reset',
-	    disabled: true,
-	    handler: function() {
-		form.reset();
+	let resetTool = Ext.create('Ext.panel.Tool', {
+	    glyph: 'xf0e2@FontAwesome', // fa-undo
+	    tooltip: gettext('Reset form data'),
+	    callback: () => form.reset(),
+	    style: {
+		paddingRight: '2px', // just slightly more room to breathe
 	    },
+	    disabled: true,
 	});
 
 	let set_button_status = function() {
 	    let valid = form.isValid();
 	    let dirty = form.isDirty();
 	    submitBtn.setDisabled(!valid || !(dirty || me.isCreate));
-	    resetBtn.setDisabled(!dirty);
+	    resetTool.setDisabled(!dirty);
 	};
 
 	form.on('dirtychange', set_button_status);
@@ -334,10 +349,10 @@ Ext.define('Proxmox.window.Edit', {
 	    me.title = Proxmox.Utils.dialog_title(me.subject, me.isCreate, me.isAdd);
 	}
 
-	if (me.isCreate || !me.showReset) {
-		me.buttons = [submitBtn];
-	} else {
-		me.buttons = [submitBtn, resetBtn];
+	me.buttons = [submitBtn];
+
+	if (!me.isCreate && me.showReset) {
+	    me.tools = [resetTool];
 	}
 
 	if (inputPanel && inputPanel.hasAdvanced) {

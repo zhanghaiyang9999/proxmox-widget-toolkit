@@ -15,7 +15,9 @@
 }
 
 .proxmox-tags-full .x-grid-cell-inner-treecolumn .proxmox-tag-light,
-.proxmox-tags-full .x-grid-cell-inner-treecolumn .proxmox-tag-dark {
+.proxmox-tags-full .x-grid-cell-inner-treecolumn .proxmox-tag-dark,
+.x-grid-cell-inner-treecolumn .proxmox-tags-full .proxmox-tag-light,
+.x-grid-cell-inner-treecolumn .proxmox-tags-full .proxmox-tag-dark {
     display: inherit;
 }
 
@@ -25,8 +27,10 @@
 }
 
 
-.proxmox-tags-circle .proxmox-tag-light,
-.proxmox-tags-circle .proxmox-tag-dark {
+.proxmox-tags-circle :not(span.proxmox-tags-full) > .proxmox-tag-light,
+.proxmox-tags-circle :not(span.proxmox-tags-full) > .proxmox-tag-dark,
+.proxmox-tags-circle > .proxmox-tag-light,
+.proxmox-tags-circle > .proxmox-tag-dark {
     margin: 0px 1px;
     position: relative;
     top: 2px;
@@ -38,13 +42,17 @@
     overflow: hidden;
 }
 
-.proxmox-tags-none .proxmox-tag-light,
-.proxmox-tags-none .proxmox-tag-dark {
+.proxmox-tags-none :not(span.proxmox-tags-full) > .proxmox-tag-light,
+.proxmox-tags-none :not(span.proxmox-tags-full) > .proxmox-tag-dark,
+.proxmox-tags-none > .proxmox-tag-light,
+.proxmox-tags-none > .proxmox-tag-dark {
     display: none;
 }
 
-.proxmox-tags-dense .proxmox-tag-light,
-.proxmox-tags-dense .proxmox-tag-dark {
+.proxmox-tags-dense :not(span.proxmox-tags-full) > .proxmox-tag-light,
+.proxmox-tags-dense :not(span.proxmox-tags-full) > .proxmox-tag-dark,
+.proxmox-tags-dense > .proxmox-tag-light,
+.proxmox-tags-dense > .proxmox-tag-dark {
     width: 6px;
     margin-right: 1px;
     display: inline-block;
@@ -65,6 +73,9 @@
 
 .x-mask-msg-text {
     text-align: center;
+}
+.x-window-header-default-top .x-mask {
+    background-color: #f5f5f5B4; /* ~ 0.7 opacity */
 }
 
 .proxmox-disabled-row, .proxmox-disabled-row td {
@@ -113,12 +124,14 @@
     color: #3892d4;
 }
 
-.pwt-eol-icon {
+.eol-notice a:visited {
+    color: inherit;
+}
+.eol-notice > i.fa {
     position: relative;
     float: left;
     margin-right: 5px;
     font-size: 1.3em;
-    color: #FF6C59;
 }
 
 /* reduce chart legend space usage to something more sane */

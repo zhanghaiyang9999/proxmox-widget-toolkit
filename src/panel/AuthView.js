@@ -1,7 +1,9 @@
 Ext.define('Proxmox.panel.AuthView', {
     extend: 'Ext.grid.GridPanel',
-
     alias: 'widget.pmxAuthView',
+    mixins: ['Proxmox.Mixin.CBind'],
+
+    showDefaultRealm: false,
 
     stateful: true,
     stateId: 'grid-authrealms',
@@ -11,7 +13,7 @@ Ext.define('Proxmox.panel.AuthView', {
     },
 
     baseUrl: '/access/domains',
-    useTypeInUrl: false,
+    storeBaseUrl: '/access/domains',
 
     columns: [
 	{
@@ -27,6 +29,17 @@ Ext.define('Proxmox.panel.AuthView', {
 	    dataIndex: 'type',
 	},
 	{
+	    header: gettext('Default'),
+	    width: 80,
+	    sortable: true,
+	    dataIndex: 'default',
+	    renderer: isDefault => isDefault ? Proxmox.Utils.renderEnabledIcon(true) : '',
+	    align: 'center',
+	    cbind: {
+		hidden: '{!showDefaultRealm}',
+	    },
+	},
+	{
 	    header: gettext('Comment'),
 	    sortable: false,
 	    dataIndex: 'comment',
@@ -35,21 +48,17 @@ Ext.define('Proxmox.panel.AuthView', {
 	},
     ],
 
-    store: {
-	model: 'pmx-domains',
-	sorters: {
-	    property: 'realm',
-	    direction: 'ASC',
-	},
-    },
-
     openEditWindow: function(authType, realm) {
 	let me = this;
+	const { useTypeInUrl, onlineHelp } = Proxmox.Schema.authDomains[authType];
+
 	Ext.create('Proxmox.window.AuthEditBase', {
 	    baseUrl: me.baseUrl,
-	    useTypeInUrl: me.useTypeInUrl,
+	    useTypeInUrl,
+	    onlineHelp,
 	    authType,
 	    realm,
+	    showDefaultRealm: me.showDefaultRealm,
 	    listeners: {
 		destroy: () => me.reload(),
 	    },
@@ -95,6 +104,18 @@ Ext.define('Proxmox.panel.AuthView', {
     initComponent: function() {
 	var me = this;
 
+	me.store = {
+	    model: 'pmx-domains',
+	    sorters: {
+		property: 'realm',
+		direction: 'ASC',
+	    },
+	    proxy: {
+		type: 'proxmox',
+		url: `/api2/json${me.storeBaseUrl}`,
+	    },
+	};
+
 	let menuitems = [];
 	for (const [authType, config] of Object.entries(Proxmox.Schema.authDomains).sort()) {
 	    if (!config.add) { continue; }
@@ -123,7 +144,7 @@ Ext.define('Proxmox.panel.AuthView', {
 		xtype: 'proxmoxStdRemoveButton',
 		getUrl: (rec) => {
 		    let url = me.baseUrl;
-		    if (me.useTypeInUrl) {
+		    if (Proxmox.Schema.authDomains[rec.data.type].useTypeInUrl) {
 			url += `/${rec.get('type')}`;
 		    }
 		    url += `/${rec.getId()}`;

@@ -1,5 +1,8 @@
 Ext.define('Proxmox.window.AuthEditBase', {
     extend: 'Proxmox.window.Edit',
+    mixins: ['Proxmox.Mixin.CBind'],
+
+    showDefaultRealm: false,
 
     isAdd: true,
 
@@ -29,9 +32,9 @@ Ext.define('Proxmox.window.AuthEditBase', {
 
 	let authConfig = Proxmox.Schema.authDomains[me.authType];
 	if (!authConfig) {
-	    throw 'unknown auth type';
+	    throw `unknown auth type ${me.authType}`;
 	} else if (!authConfig.add && me.isCreate) {
-	    throw 'trying to add non addable realm';
+	    throw `trying to add non addable realm of type ${me.authType}`;
 	}
 
 	me.subject = authConfig.name;
@@ -51,7 +54,9 @@ Ext.define('Proxmox.window.AuthEditBase', {
 			realm: me.realm,
 			xtype: authConfig.ipanel,
 			isCreate: me.isCreate,
+			useTypeInUrl: me.useTypeInUrl,
 			type: me.authType,
+			showDefaultRealm: me.showDefaultRealm,
 		    },
 		    {
 			title: gettext('Sync Options'),
@@ -67,7 +72,9 @@ Ext.define('Proxmox.window.AuthEditBase', {
 		realm: me.realm,
 		xtype: authConfig.ipanel,
 		isCreate: me.isCreate,
+		useTypeInUrl: me.useTypeInUrl,
 		type: me.authType,
+		showDefaultRealm: me.showDefaultRealm,
 	    }];
 	}
 
@@ -86,7 +93,7 @@ Ext.define('Proxmox.window.AuthEditBase', {
 		    // only check this when the type is not in the api path
 		    if (!me.useTypeInUrl && data.type !== me.authType) {
 			me.close();
-			throw "got wrong auth type";
+			throw `got wrong auth type '${me.authType}' for realm '${data.type}'`;
 		    }
 		    me.setValues(data);
 		},

@@ -31,6 +31,8 @@ JSSRC=					\
 	form/ExpireDate.js		\
 	form/IntegerField.js		\
 	form/TextField.js		\
+	form/TextAreaField.js		\
+	form/VlanField.js		\
 	form/DateTimeField.js		\
 	form/Checkbox.js		\
 	form/KVComboBox.js		\
@@ -48,6 +50,7 @@ JSSRC=					\
 	form/ACME.js			\
 	form/UserSelector.js		\
 	form/ThemeSelector.js		\
+	form/FingerprintField.js	\
 	button/Button.js		\
 	button/AltText.js		\
 	button/HelpButton.js		\
@@ -77,6 +80,7 @@ JSSRC=					\
 	panel/StatusView.js		\
 	panel/TfaView.js		\
 	panel/NotesView.js		\
+	panel/WebhookEditPanel.js	\
 	window/Edit.js			\
 	window/PasswordEdit.js		\
 	window/SafeDestroy.js		\
@@ -86,6 +90,7 @@ JSSRC=					\
 	window/DiskSmart.js		\
 	window/ZFSDetail.js		\
 	window/Certificates.js		\
+	window/ConsentModal.js		\
 	window/ACMEAccount.js		\
 	window/ACMEPluginEdit.js	\
 	window/ACMEDomains.js		\
@@ -95,6 +100,8 @@ JSSRC=					\
 	window/AuthEditBase.js		\
 	window/AuthEditOpenId.js	\
 	window/AuthEditLDAP.js		\
+	window/AuthEditAD.js		\
+	window/AuthEditSimple.js        \
 	window/TfaWindow.js		\
 	window/AddTfaRecovery.js	\
 	window/AddTotp.js		\
@@ -149,4 +156,5 @@ install: proxmoxlib.js proxmoxlib.min.js
 
 .PHONY: clean
 clean:
+	$(MAKE) -C proxmox-dark $@
 	rm -f proxmoxlib.js* proxmoxlib.min.js* .lint-incremental

@@ -2,6 +2,9 @@ Ext.define('Proxmox.node.NetworkEdit', {
     extend: 'Proxmox.window.Edit',
     alias: ['widget.proxmoxNodeNetworkEdit'],
 
+    // Enable to show the VLAN ID field
+    enableBridgeVlanIds: false,
+
     initComponent: function() {
 	let me = this;
 
@@ -57,11 +60,53 @@ Ext.define('Proxmox.node.NetworkEdit', {
 	}
 
 	if (me.iftype === 'bridge') {
+	    let vlanIdsField = !me.enableBridgeVlanIds ? undefined : Ext.create('Ext.form.field.Text', {
+		fieldLabel: gettext('VLAN IDs'),
+		name: 'bridge_vids',
+		emptyText: '2-4094',
+		disabled: true,
+		autoEl: {
+		    tag: 'div',
+		    'data-qtip': gettext("List of VLAN IDs and ranges, useful for NICs with restricted VLAN offloading support. For example: '2 4 100-200'"),
+		},
+		validator: function(value) {
+		    if (!value) { // empty
+			return true;
+		    }
+
+		    for (const vid of value.split(/\s+[,;]?/)) {
+			if (!vid) {
+			    continue;
+			}
+			let res = vid.match(/^(\d+)(?:-(\d+))?$/);
+			if (!res) {
+			    return Ext.String.format(gettext("not a valid bridge VLAN ID entry: {0}"), vid);
+			}
+			let start = Number(res[1]), end = Number(res[2] ?? res[1]); // end=start for single IDs
+
+			if (Number.isNaN(start) || Number.isNaN(end)) {
+			    return Ext.String.format(gettext('VID range includes not-a-number: {0}'), vid);
+			} else if (start > end) {
+			    return Ext.String.format(gettext('VID range must go from lower to higher tag: {0}'), vid);
+			} else if (start < 2 || end > 4094) { // check just one each, we already ensured start < end
+			    return Ext.String.format(gettext('VID range outside of allowed 2 and 4094 limit: {0}'), vid);
+			}
+		    }
+		    return true;
+		},
+	    });
 	    column2.push({
 		xtype: 'proxmoxcheckbox',
 		fieldLabel: gettext('VLAN aware'),
 		name: 'bridge_vlan_aware',
 		deleteEmpty: !me.isCreate,
+		listeners: {
+		    change: function(f, newVal) {
+			if (vlanIdsField) {
+			    vlanIdsField.setDisabled(!newVal);
+			}
+		    },
+		},
 	    });
 	    column2.push({
 		xtype: 'textfield',
@@ -72,6 +117,9 @@ Ext.define('Proxmox.node.NetworkEdit', {
 		    'data-qtip': gettext('Space-separated list of interfaces, for example: enp0s0 enp1s0'),
 		},
 	    });
+	    if (vlanIdsField) {
+		advancedColumn2.push(vlanIdsField);
+	    }
 	} else if (me.iftype === 'OVSBridge') {
 	    column2.push({
 		xtype: 'textfield',
@@ -97,7 +145,7 @@ Ext.define('Proxmox.node.NetworkEdit', {
 		name: 'ovs_bridge',
 	    });
 	    column2.push({
-		xtype: 'pveVlanField',
+		xtype: 'proxmoxvlanfield',
 		deleteEmpty: !me.isCreate,
 		name: 'ovs_tag',
 		value: '',
@@ -140,7 +188,7 @@ Ext.define('Proxmox.node.NetworkEdit', {
 	    });
 
 	    column2.push({
-		xtype: 'pveVlanField',
+		xtype: 'proxmoxvlanfield',
 		name: 'vlan-id',
 		value: me.vlanidvalue,
 		disabled: me.disablevlanid,
@@ -211,7 +259,7 @@ Ext.define('Proxmox.node.NetworkEdit', {
 		name: 'ovs_bridge',
 	    });
 	    column2.push({
-		xtype: 'pveVlanField',
+		xtype: 'proxmoxvlanfield',
 		deleteEmpty: !me.isCreate,
 		name: 'ovs_tag',
 		value: '',
@@ -254,7 +302,7 @@ Ext.define('Proxmox.node.NetworkEdit', {
 	    value: me.iface,
 	    vtype: iface_vtype,
 	    allowBlank: false,
-	    maxLength: 15,
+	    maxLength: iface_vtype === 'BridgeName' ? 10 : 15,
 	    autoEl: {
 		tag: 'div',
 		 'data-qtip': gettext('For example, vmbr0.100, vmbr0, vlan0.100, vlan0'),

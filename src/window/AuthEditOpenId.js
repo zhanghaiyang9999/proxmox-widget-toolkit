@@ -3,12 +3,14 @@ Ext.define('Proxmox.panel.OpenIDInputPanel', {
     xtype: 'pmxAuthOpenIDPanel',
     mixins: ['Proxmox.Mixin.CBind'],
 
+    showDefaultRealm: false,
+
     type: 'openid',
 
     onGetValues: function(values) {
 	let me = this;
 
-	if (me.isCreate) {
+	if (me.isCreate && !me.useTypeInUrl) {
 	    values.type = me.type;
 	}
 
@@ -34,6 +36,21 @@ Ext.define('Proxmox.panel.OpenIDInputPanel', {
 	    },
 	    fieldLabel: gettext('Realm'),
 	    allowBlank: false,
+	},
+	{
+	    xtype: 'proxmoxcheckbox',
+	    fieldLabel: gettext('Default Realm'),
+	    name: 'default',
+	    value: 0,
+	    cbind: {
+		deleteEmpty: '{!isCreate}',
+		hidden: '{!showDefaultRealm}',
+		disabled: '{!showDefaultRealm}',
+	    },
+	    autoEl: {
+		tag: 'div',
+		'data-qtip': gettext('Set realm as default for login'),
+	    },
 	},
 	{
 	    xtype: 'proxmoxtextfield',

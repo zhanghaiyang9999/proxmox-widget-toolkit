@@ -7,6 +7,8 @@ Ext.define('Proxmox.panel.NotesView', {
     bodyPadding: 10,
     scrollable: true,
     animCollapse: false,
+    collapseFirst: false,
+
     maxLength: 64 * 1024,
     enableTBar: false,
     onlineHelp: 'markdown_basics',
@@ -17,6 +19,7 @@ Ext.define('Proxmox.panel.NotesView', {
 	items: [
 	    {
 		text: gettext('Edit'),
+		iconCls: 'fa fa-pencil-square-o',
 		handler: function() {
 		    let view = this.up('panel');
 		    view.run_editor();
@@ -109,7 +112,23 @@ Ext.define('Proxmox.panel.NotesView', {
     listeners: {
 	render: function(c) {
 	    let me = this;
-	    me.getEl().on('dblclick', me.run_editor, me);
+	    let sp = Ext.state.Manager.getProvider();
+	    // to cover live changes to the browser setting
+	    me.mon(sp, 'statechange', function(provider, key, value) {
+		if (value === null || key !== 'edit-notes-on-double-click') {
+		    return;
+		}
+		if (value) {
+		    me.getEl().on('dblclick', me.run_editor, me);
+		} else {
+		    // there's only the me.run_editor listener, and removing just that did not work
+		    me.getEl().clearListeners();
+		}
+	    });
+	    // to cover initial setting value
+	    if (sp.get('edit-notes-on-double-click', false)) {
+		me.getEl().on('dblclick', me.run_editor, me);
+	    }
 	},
 	afterlayout: function() {
 	    let me = this;
@@ -122,10 +141,11 @@ Ext.define('Proxmox.panel.NotesView', {
 
     tools: [
 	{
-	    type: 'gear',
-	    handler: function() {
-		let view = this.up('panel');
-		view.run_editor();
+	    glyph: 'xf044@FontAwesome', // fa-pencil-square-o
+	    tooltip: gettext('Edit notes'),
+	    callback: view => view.run_editor(),
+	    style: {
+		paddingRight: '5px',
 	    },
 	},
     ],

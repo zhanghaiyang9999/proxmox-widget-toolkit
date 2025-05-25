@@ -1,4 +1,10 @@
-src/.lint-incremental
-*.deb
-*.changes
 *.buildinfo
+*.changes
+*.deb
+*.dsc
+*.tar.xz
+/proxmox-widget-toolkit-[0-9]*/
+src/.lint-incremental
+src/proxmox-dark/theme-proxmox-dark.css
+src/proxmoxlib.js
+src/proxmoxlib.min.js

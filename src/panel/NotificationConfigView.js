@@ -1,3 +1,26 @@
+Ext.define('Proxmox.panel.NotificationConfigViewModel', {
+    extend: 'Ext.app.ViewModel',
+
+    alias: 'viewmodel.pmxNotificationConfigPanel',
+
+    formulas: {
+	builtinSelected: function(get) {
+	    let origin = get('selection')?.get('origin');
+	    return origin === 'modified-builtin' || origin === 'builtin';
+	},
+	removeButtonText: get => get('builtinSelected') ? gettext('Reset') : gettext('Remove'),
+	removeButtonConfirmMessage: function(get) {
+	    if (get('builtinSelected')) {
+		return gettext('Do you want to reset {0} to its default settings?');
+	    } else {
+		// Use default message provided by the button
+		return undefined;
+	    }
+	},
+    },
+
+});
+
 Ext.define('Proxmox.panel.NotificationConfigView', {
     extend: 'Ext.panel.Panel',
     alias: 'widget.pmxNotificationConfigView',
@@ -36,6 +59,14 @@ Ext.define('Proxmox.panel.NotificationEndpointView', {
 
     title: gettext('Notification Targets'),
 
+    viewModel: {
+	type: 'pmxNotificationConfigPanel',
+    },
+
+    bind: {
+	selection: '{selection}',
+    },
+
     controller: {
 	xclass: 'Ext.app.ViewController',
 
@@ -70,6 +101,7 @@ Ext.define('Proxmox.panel.NotificationEndpointView', {
 	    let me = this;
 	    let view = me.getView();
 	    view.getStore().rstore.load();
+	    this.getView().setSelection(null);
 	},
 
 	testEndpoint: function() {
@@ -205,8 +237,16 @@ Ext.define('Proxmox.panel.NotificationEndpointView', {
 		{
 		    xtype: 'proxmoxStdRemoveButton',
 		    callback: 'reload',
+		    bind: {
+			text: '{removeButtonText}',
+			customConfirmationMessage: '{removeButtonConfirmMessage}',
+		    },
 		    getUrl: function(rec) {
 			return `${me.baseUrl}/endpoints/${rec.data.type}/${rec.getId()}`;
+		    },
+		    enableFn: (rec) => {
+			let origin = rec.get('origin');
+			return origin === 'user-created' || origin === 'modified-builtin';
 		    },
 		},
 		'-',
@@ -260,7 +300,16 @@ Ext.define('Proxmox.panel.NotificationMatcherView', {
 
 	reload: function() {
 	    this.getView().getStore().rstore.load();
+	    this.getView().setSelection(null);
 	},
+    },
+
+    viewModel: {
+	type: 'pmxNotificationConfigPanel',
+    },
+
+    bind: {
+	selection: '{selection}',
     },
 
     listeners: {
@@ -342,7 +391,15 @@ Ext.define('Proxmox.panel.NotificationMatcherView', {
 		{
 		    xtype: 'proxmoxStdRemoveButton',
 		    callback: 'reload',
+		    bind: {
+			text: '{removeButtonText}',
+			customConfirmationMessage: '{removeButtonConfirmMessage}',
+		    },
 		    baseurl: `${me.baseUrl}/matchers`,
+		    enableFn: (rec) => {
+			let origin = rec.get('origin');
+			return origin === 'user-created' || origin === 'modified-builtin';
+		    },
 		},
 	    ],
 	});

@@ -2,6 +2,10 @@ Ext.define('Proxmox.node.DNSView', {
     extend: 'Proxmox.grid.ObjectGrid',
     alias: ['widget.proxmoxNodeDNSView'],
 
+    // Some longer existing APIs use a brittle "replace whole config" style, you can set this option
+    // if the DNSView component is used in an API that has more modern, granular update semantics.
+    deleteEmpty: false,
+
     initComponent: function() {
 	let me = this;
 
@@ -12,6 +16,7 @@ Ext.define('Proxmox.node.DNSView', {
 	let run_editor = () => Ext.create('Proxmox.node.DNSEdit', {
 	    autoShow: true,
 	    nodename: me.nodename,
+	    deleteEmpty: me.deleteEmpty,
 	});
 
 	Ext.apply(me, {
@@ -21,7 +26,7 @@ Ext.define('Proxmox.node.DNSView', {
 	    run_editor: run_editor,
 	    rows: {
 		search: {
-		    header: 'Search domain',
+		    header: gettext('Search domain'),
 		    required: true,
 		    renderer: Ext.htmlEncode,
 		},

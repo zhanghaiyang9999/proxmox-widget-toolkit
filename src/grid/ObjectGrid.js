@@ -67,7 +67,6 @@ Ext.define('Proxmox.grid.ObjectGrid', {
 	    editor: {
 		xtype: 'proxmoxWindowEdit',
 		subject: text,
-		onlineHelp: opts.onlineHelp,
 		fieldDefaults: {
 		    labelWidth: opts.labelWidth || 100,
 		},
@@ -84,6 +83,9 @@ Ext.define('Proxmox.grid.ObjectGrid', {
 		},
 	    },
 	};
+	if (opts.onlineHelp) {
+	    me.rows[name].editor.onlineHelp = opts.onlineHelp;
+	}
     },
 
     add_text_row: function(name, text, opts) {
@@ -100,7 +102,6 @@ Ext.define('Proxmox.grid.ObjectGrid', {
 	    editor: {
 		xtype: 'proxmoxWindowEdit',
 		subject: text,
-		onlineHelp: opts.onlineHelp,
 		fieldDefaults: {
 		    labelWidth: opts.labelWidth || 100,
 		},
@@ -115,6 +116,9 @@ Ext.define('Proxmox.grid.ObjectGrid', {
 		},
 	    },
 	};
+	if (opts.onlineHelp) {
+	    me.rows[name].editor.onlineHelp = opts.onlineHelp;
+	}
     },
 
     add_boolean_row: function(name, text, opts) {
@@ -131,7 +135,6 @@ Ext.define('Proxmox.grid.ObjectGrid', {
 	    editor: {
 		xtype: 'proxmoxWindowEdit',
 		subject: text,
-		onlineHelp: opts.onlineHelp,
 		fieldDefaults: {
 		    labelWidth: opts.labelWidth || 100,
 		},
@@ -147,6 +150,9 @@ Ext.define('Proxmox.grid.ObjectGrid', {
 		},
 	    },
 	};
+	if (opts.onlineHelp) {
+	    me.rows[name].editor.onlineHelp = opts.onlineHelp;
+	}
     },
 
     add_integer_row: function(name, text, opts) {
@@ -163,7 +169,6 @@ Ext.define('Proxmox.grid.ObjectGrid', {
 	    editor: {
 		xtype: 'proxmoxWindowEdit',
 		subject: text,
-		onlineHelp: opts.onlineHelp,
 		fieldDefaults: {
 		    labelWidth: opts.labelWidth || 100,
 		},
@@ -180,6 +185,40 @@ Ext.define('Proxmox.grid.ObjectGrid', {
 		},
 	    },
 	};
+	if (opts.onlineHelp) {
+	    me.rows[name].editor.onlineHelp = opts.onlineHelp;
+	}
+    },
+
+    // adds a row that allows editing in a full TextArea that transparently de/encodes as Base64
+    add_textareafield_row: function(name, text, opts) {
+	let me = this;
+
+	opts = opts || {};
+	me.rows = me.rows || {};
+	let fieldOpts = opts.fieldOpts || {};
+
+	me.rows[name] = {
+	    required: true,
+	    defaultValue: "",
+	    header: text,
+	    renderer: value => Ext.htmlEncode(Proxmox.Utils.base64ToUtf8(value)),
+	    editor: {
+		xtype: 'proxmoxWindowEdit',
+		subject: text,
+		fieldDefaults: {
+		    labelWidth: opts.labelWidth || 600,
+		},
+		items: {
+		    xtype: 'proxmoxBase64TextArea',
+		    ...fieldOpts,
+		    name,
+		},
+	    },
+	};
+	if (opts.onlineHelp) {
+	    me.rows[name].editor.onlineHelp = opts.onlineHelp;
+	}
     },
 
     editorConfig: {}, // default config passed to editor

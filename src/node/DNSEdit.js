@@ -2,6 +2,10 @@ Ext.define('Proxmox.node.DNSEdit', {
     extend: 'Proxmox.window.Edit',
     alias: ['widget.proxmoxNodeDNSEdit'],
 
+    // Some longer existing APIs use a brittle "replace whole config" style, you can set this option
+    // if the DNSEdit component is used in an API that has more modern, granular update semantics.
+    deleteEmpty: false,
+
     initComponent: function() {
 	let me = this;
 
@@ -21,6 +25,7 @@ Ext.define('Proxmox.node.DNSEdit', {
                 fieldLabel: gettext('DNS server') + " 1",
 		vtype: 'IP64Address',
 		skipEmptyText: true,
+		deleteEmpty: me.deleteEmpty,
                 name: 'dns1',
 	    },
 	    {
@@ -28,6 +33,7 @@ Ext.define('Proxmox.node.DNSEdit', {
 		fieldLabel: gettext('DNS server') + " 2",
 		vtype: 'IP64Address',
 		skipEmptyText: true,
+		deleteEmpty: me.deleteEmpty,
                 name: 'dns2',
 	    },
 	    {
@@ -35,6 +41,7 @@ Ext.define('Proxmox.node.DNSEdit', {
                 fieldLabel: gettext('DNS server') + " 3",
 		vtype: 'IP64Address',
 		skipEmptyText: true,
+		deleteEmpty: me.deleteEmpty,
                 name: 'dns3',
 	    },
 	];

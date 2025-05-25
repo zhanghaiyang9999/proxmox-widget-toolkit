@@ -1,7 +1,5 @@
-/* Popup a message window
- * where the user has to manually enter the resource ID
- * to enable the destroy button
- */
+// Pop-up a message window where the user has to manually enter the resource ID to enable the
+// destroy confirmation button to ensure that they got the correct resource selected for.
 Ext.define('Proxmox.window.SafeDestroy', {
     extend: 'Ext.window.Window',
     alias: 'widget.proxmoxSafeDestroy',
@@ -28,6 +26,7 @@ Ext.define('Proxmox.window.SafeDestroy', {
     config: {
 	item: {
 	    id: undefined,
+	    formattedIdentifier: undefined,
 	},
 	url: undefined,
 	note: undefined,
@@ -191,13 +190,18 @@ Ext.define('Proxmox.window.SafeDestroy', {
 	let taskName = me.getTaskName();
 	if (Ext.isDefined(taskName)) {
 	    me.lookupReference('messageCmp').setHtml(
-		Proxmox.Utils.format_task_description(taskName, itemId),
+		Ext.htmlEncode(
+		    Proxmox.Utils.format_task_description(
+			taskName,
+			me.getItem().formattedIdentifier ?? itemId,
+		    ),
+		),
 	    );
 	} else {
 	    throw "no task name specified";
 	}
 
-	me.lookupReference('confirmField')
-	    .setFieldLabel(`${gettext('Please enter the ID to confirm')} (${itemId})`);
+	let label = `${gettext('Please enter the ID to confirm')} (${itemId})`;
+	me.lookupReference('confirmField').setFieldLabel(Ext.htmlEncode(label));
     },
 });

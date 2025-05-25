@@ -64,7 +64,9 @@ utilities: {
 
     language_map: { //language map is sorted alphabetically by iso 639-1
 	ar: `العربية - ${gettext("Arabic")}`,
+	bg: `Български - ${gettext("Bulgarian")}`,
 	ca: `Català - ${gettext("Catalan")}`,
+	cs: `Czech - ${gettext("Czech")}`,
 	da: `Dansk - ${gettext("Danish")}`,
 	de: `Deutsch - ${gettext("German")}`,
 	en: `English - ${gettext("English")}`,
@@ -155,7 +157,11 @@ utilities: {
     },
 
     getNoSubKeyHtml: function(url) {
-	return Ext.String.format('You do not have a valid subscription for this server. Please visit <a target="_blank" href="{0}">www.proxmox.com</a> to get a list of available options.', url || 'https://www.proxmox.com');
+	let html_url = Ext.String.format('<a target="_blank" href="{0}">www.proxmox.com</a>', url || 'https://www.proxmox.com');
+	return Ext.String.format(
+	    gettext('You do not have a valid subscription for this server. Please visit {0} to get a list of available options.'),
+	    html_url,
+	);
     },
 
     format_boolean_with_default: function(value) {
@@ -313,7 +319,7 @@ utilities: {
 	// that way the cookie gets deleted after the browser window is closed
 	if (data.ticket) {
 	    Proxmox.CSRFPreventionToken = data.CSRFPreventionToken;
-	    Ext.util.Cookies.set(Proxmox.Setup.auth_cookie_name, data.ticket, null, '/', null, true, "strict");
+	    Ext.util.Cookies.set(Proxmox.Setup.auth_cookie_name, data.ticket, null, '/', null, true, "lax");
 	}
 
 	if (data.token) {
@@ -339,7 +345,7 @@ utilities: {
 	    return;
 	}
 	// ExtJS clear is basically the same, but browser may complain if any cookie isn't "secure"
-	Ext.util.Cookies.set(Proxmox.Setup.auth_cookie_name, "", new Date(0), null, null, true, "strict");
+	Ext.util.Cookies.set(Proxmox.Setup.auth_cookie_name, "", new Date(0), null, null, true, "lax");
 	window.localStorage.removeItem("ProxmoxUser");
     },
 
@@ -417,7 +423,7 @@ utilities: {
 	    let error = request._operation.getError();
 	    let msg = Proxmox.Utils.getResponseErrorMessage(error);
 	    if (!errorCallback || !errorCallback(error, msg)) {
-		Proxmox.Utils.setErrorMask(component, msg);
+		Proxmox.Utils.setErrorMask(component, Ext.htmlEncode(msg));
 	    }
 	});
     },
@@ -458,6 +464,12 @@ utilities: {
 	    newopts.url = '/api2/extjs' + newopts.url;
 	}
 	delete newopts.callback;
+	let unmask = (target) => {
+	    if (target.waitMsgTargetCount === undefined || --target.waitMsgTargetCount <= 0) {
+		target.setLoading(false);
+		delete target.waitMsgTargetCount;
+	    }
+	};
 
 	let createWrapper = function(successFn, callbackFn, failureFn) {
 	    Ext.apply(newopts, {
@@ -466,7 +478,7 @@ utilities: {
 			if (Proxmox.Utils.toolkit === 'touch') {
 			    options.waitMsgTarget.setMasked(false);
 			} else {
-			    options.waitMsgTarget.setLoading(false);
+			    unmask(options.waitMsgTarget);
 			}
 		    }
 		    let result = Ext.decode(response.responseText);
@@ -488,7 +500,7 @@ utilities: {
 			if (Proxmox.Utils.toolkit === 'touch') {
 			    options.waitMsgTarget.setMasked(false);
 			} else {
-			    options.waitMsgTarget.setLoading(false);
+			    unmask(options.waitMsgTarget);
 			}
 		    }
 		    response.result = {};
@@ -505,7 +517,7 @@ utilities: {
 		    } else if (response.status && response.statusText) {
 			msg = gettext('Connection error') + ' ' + response.status + ': ' + response.statusText;
 		    }
-		    response.htmlStatus = msg;
+		    response.htmlStatus = Ext.htmlEncode(msg);
 		    Ext.callback(callbackFn, options.scope, [options, false, response]);
 		    Ext.callback(failureFn, options.scope, [response, options]);
 		},
@@ -518,9 +530,16 @@ utilities: {
 	if (target) {
 	    if (Proxmox.Utils.toolkit === 'touch') {
 		target.setMasked({ xtype: 'loadmask', message: newopts.waitMsg });
-	    } else {
-		// Note: ExtJS bug - this does not work when component is not rendered
+	    } else if (target.rendered) {
+		target.waitMsgTargetCount = (target.waitMsgTargetCount ?? 0) + 1;
 		target.setLoading(newopts.waitMsg);
+	    } else {
+		target.waitMsgTargetCount = (target.waitMsgTargetCount ?? 0) + 1;
+		target.on('afterlayout', function() {
+		    if ((target.waitMsgTargetCount ?? 0) > 0) {
+			target.setLoading(newopts.waitMsg);
+		    }
+		}, target, { single: true });
 	    }
 	}
 	Ext.Ajax.request(newopts);
@@ -650,6 +669,37 @@ utilities: {
 	    Proxmox.Utils.unknownText;
     },
 
+    // Only add product-agnostic fields here!
+    notificationFieldName: {
+	'type': gettext('Notification type'),
+	'hostname': gettext('Hostname'),
+    },
+
+    formatNotificationFieldName: (value) =>
+	Proxmox.Utils.notificationFieldName[value] || value,
+
+    // to add or change existing for product specific ones
+    overrideNotificationFieldName: function(extra) {
+	for (const [key, value] of Object.entries(extra)) {
+	    Proxmox.Utils.notificationFieldName[key] = value;
+	}
+    },
+
+    // Only add product-agnostic fields here!
+    notificationFieldValue: {
+	'system-mail': gettext('Forwarded mails to the local root user'),
+    },
+
+    formatNotificationFieldValue: (value) =>
+	Proxmox.Utils.notificationFieldValue[value] || value,
+
+    // to add or change existing for product specific ones
+    overrideNotificationFieldValue: function(extra) {
+	for (const [key, value] of Object.entries(extra)) {
+	    Proxmox.Utils.notificationFieldValue[key] = value;
+	}
+    },
+
     // NOTE: only add general, product agnostic, ones here! Else use override helper in product repos
     task_desc_table: {
 	aptupdate: ['', gettext('Update package database')],
@@ -762,7 +812,7 @@ utilities: {
 	let type = task.type || task.worker_type;
 	let id = task.id || task.worker_id;
 
-	return Proxmox.Utils.format_task_description(type, id);
+	return Ext.htmlEncode(Proxmox.Utils.format_task_description(type, id));
     },
 
     render_uptime: function(value) {
@@ -882,7 +932,7 @@ utilities: {
 	let parsed = Proxmox.Utils.parse_task_status(status);
 	switch (parsed) {
 	    case 'unknown': return Proxmox.Utils.unknownText;
-	    case 'error': return Proxmox.Utils.errorText + ': ' + status;
+	    case 'error': return Proxmox.Utils.errorText + ': ' + Ext.htmlEncode(status);
 	    case 'warning': return status.replace('WARNINGS', Proxmox.Utils.warningsText);
 	    case 'ok': // fall-through
 	    default: return status;
@@ -1311,6 +1361,24 @@ utilities: {
 	);
     },
 
+    // Convert utf-8 string to base64.
+    // This also escapes unicode characters such as emojis.
+    utf8ToBase64: function(string) {
+	let bytes = new TextEncoder().encode(string);
+	const escapedString = Array.from(bytes, (byte) =>
+	    String.fromCodePoint(byte),
+	).join("");
+	return btoa(escapedString);
+    },
+
+    // Converts a base64 string into a utf8 string.
+    // Decodes escaped unicode characters correctly.
+    base64ToUtf8: function(b64_string) {
+	let string = atob(b64_string);
+	let bytes = Uint8Array.from(string, (m) => m.codePointAt(0));
+	return new TextDecoder().decode(bytes);
+    },
+
     stringToRGB: function(string) {
 	let hash = 0;
 	if (!string) {
@@ -1461,6 +1529,26 @@ utilities: {
 	me.IP6_dotnotation_match = new RegExp("^(" + IPV6_REGEXP + ")(?:\\.(\\d+))?$");
 	me.Vlan_match = /^vlan(\d+)/;
 	me.VlanInterface_match = /(\w+)\.(\d+)/;
+
+
+	// Taken from proxmox-schema and ported to JS
+	let PORT_REGEX_STR = "(?:[0-9]{1,4}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])";
+	let IPRE_BRACKET_STR = "(?:" + IPV4_REGEXP + "|\\[(?:" + IPV6_REGEXP + ")\\])";
+	let DNS_NAME_STR = "(?:(?:" + DnsName_REGEXP + "\\.)*" + DnsName_REGEXP + ")";
+	let HTTP_URL_REGEX = "^https?://(?:(?:(?:"
+	    + DNS_NAME_STR
+	    + "|"
+	    + IPRE_BRACKET_STR
+	    + ")(?::"
+	    + PORT_REGEX_STR
+	    + ")?)|"
+	    + IPV6_REGEXP
+	    + ")(?:/[^\x00-\x1F\x7F]*)?$";
+
+	me.httpUrlRegex = new RegExp(HTTP_URL_REGEX);
+
+	// Same as SAFE_ID_REGEX in proxmox-schema
+	me.safeIdRegex = /^(?:[A-Za-z0-9_][A-Za-z0-9._\\-]*)$/;
     },
 });
 

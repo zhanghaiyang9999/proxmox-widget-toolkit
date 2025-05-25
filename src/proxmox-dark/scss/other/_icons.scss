@@ -33,6 +33,13 @@
   color: $icon-color;
 }
 
+// pve needs to set `color` on this pseudo element, but the api viewer and pbs
+// add a filter to the parent. so invert it here again, to fix this for pve.
+.x-tree-icon-parent:not(.x-tree-icon-custom)::before,
+.x-tree-icon-parent-expanded:not(.x-tree-icon-custom)::before {
+  filter: invert(90%);
+}
+
 // but some are implement as background SVGs or PNGs. invert them via
 // filters:
 .fa-ceph::before,
@@ -104,6 +111,9 @@
 }
 
 // pbs show task log in longest task list column
+.fa.black,
+.fa.black::after,
+.fa.black::before,
 .x-action-col-icon.fa-chevron-right::before {
   filter: none;
 }
@@ -220,6 +230,12 @@
   &::after {
     text-shadow: -1px 0 1px $background-darker;
   }
+}
+
+// set icon color of intentional black icons (e.g.: pencil icon for
+// quickly changing the ACME account)
+.fa.black {
+  color: $icon-color;
 }
 
 // The usage icons dynamically displaying how full a storage is

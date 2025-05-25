@@ -1,7 +1,5 @@
-
 Ext.define('Proxmox.panel.LDAPInputPanelViewModel', {
     extend: 'Ext.app.ViewModel',
-
     alias: 'viewmodel.pmxAuthLDAPPanel',
 
     data: {
@@ -23,6 +21,8 @@ Ext.define('Proxmox.panel.LDAPInputPanel', {
     xtype: 'pmxAuthLDAPPanel',
     mixins: ['Proxmox.Mixin.CBind'],
 
+    showDefaultRealm: false,
+
     viewModel: {
 	type: 'pmxAuthLDAPPanel',
     },
@@ -32,11 +32,11 @@ Ext.define('Proxmox.panel.LDAPInputPanel', {
     onlineHelp: 'user-realms-ldap',
 
     onGetValues: function(values) {
-	if (this.isCreate) {
+	if (this.isCreate && !this.useTypeInUrl) {
 	    values.type = this.type;
 	}
 
-	if (values.anonymous_search) {
+	if (values.anonymous_search && !this.isCreate) {
 	    if (!values.delete) {
 		values.delete = [];
 	    }
@@ -64,6 +64,12 @@ Ext.define('Proxmox.panel.LDAPInputPanel', {
 	return values;
     },
 
+    cbindData: function(config) {
+	return {
+	    isLdap: this.type === 'ldap',
+	    isAd: this.type === 'ad',
+	};
+    },
 
     column1: [
 	{
@@ -77,18 +83,39 @@ Ext.define('Proxmox.panel.LDAPInputPanel', {
 	    allowBlank: false,
 	},
 	{
+	    xtype: 'proxmoxcheckbox',
+	    fieldLabel: gettext('Default Realm'),
+	    name: 'default',
+	    value: 0,
+	    cbind: {
+		deleteEmpty: '{!isCreate}',
+		hidden: '{!showDefaultRealm}',
+		disabled: '{!showDefaultRealm}',
+	    },
+	    autoEl: {
+		tag: 'div',
+		'data-qtip': gettext('Set realm as default for login'),
+	    },
+	},
+	{
 	    xtype: 'proxmoxtextfield',
 	    fieldLabel: gettext('Base Domain Name'),
 	    name: 'base-dn',
-	    allowBlank: false,
 	    emptyText: 'cn=Users,dc=company,dc=net',
+	    cbind: {
+		hidden: '{!isLdap}',
+		allowBlank: '{!isLdap}',
+	    },
 	},
 	{
 	    xtype: 'proxmoxtextfield',
 	    fieldLabel: gettext('User Attribute Name'),
 	    name: 'user-attr',
-	    allowBlank: false,
 	    emptyText: 'uid / sAMAccountName',
+	    cbind: {
+		hidden: '{!isLdap}',
+		allowBlank: '{!isLdap}',
+	    },
 	},
 	{
 	    xtype: 'proxmoxcheckbox',
@@ -103,7 +130,14 @@ Ext.define('Proxmox.panel.LDAPInputPanel', {
 	    fieldLabel: gettext('Bind Domain Name'),
 	    name: 'bind-dn',
 	    allowBlank: false,
-	    emptyText: 'cn=user,dc=company,dc=net',
+	    cbind: {
+		emptyText: get => get('isAd') ? 'user@company.net' : 'cn=user,dc=company,dc=net',
+		autoEl: get => get('isAd') ? {
+		    tag: 'div',
+		    'data-qtip':
+			gettext('LDAP DN syntax can be used as well, e.g. cn=user,dc=company,dc=net'),
+		} : {},
+	    },
 	    bind: {
 		disabled: "{anonymous_search}",
 	    },
@@ -147,7 +181,9 @@ Ext.define('Proxmox.panel.LDAPInputPanel', {
 	    maxValue: 65535,
 	    emptyText: gettext('Default'),
 	    submitEmptyText: false,
-	    deleteEmpty: true,
+	    cbind: {
+		deleteEmpty: '{!isCreate}',
+	    },
 	},
 	{
 	    xtype: 'proxmoxKVComboBox',
@@ -195,7 +231,6 @@ Ext.define('Proxmox.panel.LDAPInputPanel', {
 	    },
 	},
     ],
-
 });
 
 
@@ -295,16 +330,30 @@ Ext.define('Proxmox.panel.LDAPSyncInputPanel', {
 	    xtype: 'proxmoxtextfield',
 	    name: 'firstname',
 	    fieldLabel: gettext('First Name attribute'),
+	    autoEl: {
+		tag: 'div',
+		'data-qtip': Ext.String.format(gettext('Often called {0}'), '`givenName`'),
+	    },
 	},
 	{
 	    xtype: 'proxmoxtextfield',
 	    name: 'lastname',
 	    fieldLabel: gettext('Last Name attribute'),
+	    autoEl: {
+		tag: 'div',
+		'data-qtip': Ext.String.format(gettext('Often called {0}'), '`sn`'),
+	    },
 	},
 	{
 	    xtype: 'proxmoxtextfield',
 	    name: 'email',
 	    fieldLabel: gettext('E-Mail attribute'),
+	    autoEl: {
+		tag: 'div',
+		'data-qtip': get => get('isAd')
+		    ? Ext.String.format(gettext('Often called {0} or {1}'), '`userPrincipalName`', '`mail`')
+		    : Ext.String.format(gettext('Often called {0}'), '`mail`'),
+	    },
 	},
 	{
 	    xtype: 'displayfield',
@@ -336,7 +385,9 @@ Ext.define('Proxmox.panel.LDAPSyncInputPanel', {
 	    xtype: 'proxmoxtextfield',
 	    name: 'user-classes',
 	    fieldLabel: gettext('User classes'),
-	    deleteEmpty: true,
+	    cbind: {
+		deleteEmpty: '{!isCreate}',
+	    },
 	    emptyText: 'inetorgperson, posixaccount, person, user',
 	    autoEl: {
 		tag: 'div',
@@ -347,7 +398,9 @@ Ext.define('Proxmox.panel.LDAPSyncInputPanel', {
 	    xtype: 'proxmoxtextfield',
 	    name: 'filter',
 	    fieldLabel: gettext('User Filter'),
-	    deleteEmpty: true,
+	    cbind: {
+		deleteEmpty: '{!isCreate}',
+	    },
 	},
     ],
 
